@@ -1,6 +1,7 @@
 library(dplyr)
 library(tidyr)
 library(readr)
+library(readxl)
 library(stringr)
 
 # Collapse duplicate wells for the same sample/dilution
@@ -89,6 +90,41 @@ create_elisa_long <- function(values_df, map_df, file_path, assay_name) {
   
   return(final_long)
 }
+
+
+# create a function to process a single excel file
+# Process a single Excel file end-to-end and return long-format data.
+process_elisa_file <- function(file_path) {
+  sheets <- excel_sheets(file_path)
+  value_matches <- grep("_value$", sheets, value = TRUE)
+  map_matches   <- grep("_map$",   sheets, value = TRUE)
+  
+  if (length(value_matches) != 1) {
+    stop(sprintf("File '%s': expected one '_value' sheet, found %d.",
+                 basename(file_path), length(value_matches)))
+  }
+  if (length(map_matches) != 1) {
+    stop(sprintf("File '%s': expected one '_map' sheet, found %d.",
+                 basename(file_path), length(map_matches)))
+  }
+  
+  values_df <- read_excel(file_path, sheet = value_matches[1])
+  map_df    <- read_excel(file_path, sheet = map_matches[1])
+  
+  if (ncol(values_df) != ncol(map_df) || nrow(values_df) != nrow(map_df)) {
+    stop(sprintf("File '%s': value and map sheets have different dimensions.",
+                 basename(file_path)))
+  }
+  
+  create_elisa_long(
+    values_df  = values_df,
+    map_df     = map_df,
+    file_path  = file_path,
+    assay_name = sub("_value$", "", value_matches[1])
+  )
+}
+
+
 
 # Helper function to compute trapezoidal AUC
 compute_trapz_auc <- function(x, y) {
