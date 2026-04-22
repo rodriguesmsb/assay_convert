@@ -3,11 +3,11 @@ library(tidyr)
 library(readr)
 library(stringr)
 
-# Collapse duplicate wells for the same sample/timepoint/dilution
+# Collapse duplicate wells for the same sample/dilution
 # This keeps the dilution curve intact
 collapse_samples <- function(df) {
   df %>%
-    group_by(sample, timepoint, dilution, file_name, assay) %>%
+    group_by(sample,dilution, file_name, assay) %>%
     summarise(
       # If there are replicate wells, average their values
       value = mean(value, na.rm = TRUE),
@@ -84,12 +84,6 @@ create_elisa_long <- function(values_df, map_df, file_path, assay_name) {
       sample = str_remove(sample, "_[0-9]+$")
     )
   
-  # Extract timepoint from the cleaned sample name
-  final_long <- final_long %>%
-    mutate(
-      timepoint = str_extract(sample, "W\\d+")
-    )
-  
   # Collapse replicate wells while preserving dilution
   final_long <- collapse_samples(final_long)
   
@@ -129,15 +123,15 @@ create_auc_df <- function(long_df) {
       value = as.numeric(value)
     ) %>%
     
-    # Compute one AUC per sample/timepoint
-    group_by(sample, timepoint, file_name, assay) %>%
+    # Compute one AUC per sample
+    group_by(sample, file_name, assay) %>%
     summarise(
       AUC = compute_trapz_auc(dilution_num, value),
       .groups = "drop"
     ) %>%
     
     # Keep requested columns
-    select(sample, timepoint, AUC, file_name, assay)
+    select(sample, AUC, file_name, assay)
   
   return(auc_df)
 }
