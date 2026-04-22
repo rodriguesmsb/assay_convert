@@ -8,10 +8,14 @@ library(stringr)
 # This keeps the dilution curve intact
 collapse_samples <- function(df) {
   df %>%
+    mutate(value_copy = value) %>% 
     group_by(sample,dilution, file_name, assay) %>%
     summarise(
       # If there are replicate wells, average their values
       value = mean(value, na.rm = TRUE),
+      
+      # compute CV across replicates for traceability
+      cv = sd(value_copy, na.rm = TRUE)/mean(value_copy, na.rm = TRUE) * 100,
       
       # Keep a representative position string for traceability
       position = paste(position, collapse = "; "),
