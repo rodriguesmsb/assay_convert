@@ -11,7 +11,7 @@ source("R/functions.R")
 server <- function(input, output, session) {
   
   # Define which folders the app is allowed to browse
-  roots <- c(home = "~")
+  roots <- c(home = "//win.ad.jhu.edu/Users$/HOME/")
   
   # Connect the shinyFiles button to file browsing
   shinyFileChoose(
@@ -115,7 +115,6 @@ server <- function(input, output, session) {
           group = sample,
           text = paste0(
             "Sample: ", sample,
-            "<br>Timepoint: ", timepoint,
             "<br>Dilution: ", dilution,
             "<br>Value: ", round(value, 3),
             "<br>Assay: ", assay,
