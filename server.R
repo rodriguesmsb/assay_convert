@@ -86,7 +86,7 @@ server <- function(input, output, session) {
       values_df = values_data(),
       map_df = map_data(),
       file_path = selected_file(),
-      assay_name = input$assay_name
+      assay_name = gsub(value_sheet(), pattern = "_value$", replacement = "")
     )
   })
   
@@ -109,7 +109,7 @@ server <- function(input, output, session) {
       arrange(sample, dilution_num) %>%
       ggplot(
         aes(
-          x = dilution_num,
+          x = log(dilution_num), # plot dilution on log scale
           y = value,
           color = sample,
           group = sample,
@@ -138,7 +138,6 @@ server <- function(input, output, session) {
     req(curve_plot())
     plotly::ggplotly(curve_plot())
   })
-  
   
   # Show selected path
   output$selected_path <- renderText({

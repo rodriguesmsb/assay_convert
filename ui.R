@@ -25,12 +25,6 @@ ui <- page_sidebar(
       multiple = FALSE
     ),
     
-    # Let the user type the assay name
-    textInput(
-      inputId = "assay_name",
-      label = "Enter assay name",
-      value = ""
-    ),
     
     # Let the user choose the export file name
     textInput(
