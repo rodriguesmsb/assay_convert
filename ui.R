@@ -18,12 +18,14 @@ ui <- page_sidebar(
   sidebar = sidebar(
     
     # Let the user browse for the Excel workbook
-    shinyFilesButton(
-      id = "xlsx_file",
-      label = "Select Excel file",
-      title = "Choose an .xlsx file",
-      multiple = FALSE
+    shinyDirButton(
+      id    = "xlsx_dir",
+      label = "Select folder",
+      title = "Choose a folder containing .xlsx files"
     ),
+    
+    # show with folder was seleced
+    verbatimTextOutput("selected_path", placeholder = TRUE),
     
     
     # Let the user choose the export file name

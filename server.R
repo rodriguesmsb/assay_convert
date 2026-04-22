@@ -13,81 +13,56 @@ server <- function(input, output, session) {
   # Define which folders the app is allowed to browse
   roots <- c(home = "//win.ad.jhu.edu/Users$/HOME/")
   
-  # Connect the shinyFiles button to file browsing
-  shinyFileChoose(
+  # allow shiny to browse for Excel files
+  shinyDirChoose(
     input,
-    id = "xlsx_file",
+    id = "xlsx_dir",
     roots = roots,
-    filetypes = c("xlsx")
+    allowDirCreate = FALSE
   )
   
-  # Return the selected Excel file path
-  selected_file <- reactive({
-    req(input$xlsx_file)
-    
-    # Convert shinyFiles output into a regular data frame
-    fileinfo <- parseFilePaths(roots, input$xlsx_file)
-    req(nrow(fileinfo) > 0)
-    
-    fileinfo$datapath[1]
+  # return all files inside the folder
+  selected_dir <- reactive({
+    req(input$xlsx_dir)
+    dir_path <- parseDirPath(roots, input$xlsx_dir)
+    req(length(dir_path) > 0, nzchar(dir_path))
+    dir_path
   })
   
-  # Read all sheet names from the workbook
-  sheet_names <- reactive({
-    excel_sheets(selected_file())
+  # List all .xlsx files in the selected folder (skip Excel lock files)
+  xlsx_files <- reactive({
+    req(selected_dir())
+    files <- list.files(selected_dir(), pattern = "\\.xlsx$",
+                        full.names = TRUE, ignore.case = TRUE)
+    files <- files[!grepl("^~\\$", basename(files))]
+    validate(need(length(files) > 0, "No .xlsx files found in the folder."))
+    files
   })
   
-  # Find the sheet ending with "_value"
-  value_sheet <- reactive({
-    matches <- grep("_value$", sheet_names(), value = TRUE)
-    
-    validate(
-      need(length(matches) == 1,
-           paste0("Expected exactly one sheet ending with '_value', but found ", length(matches), "."))
-    )
-    
-    matches[1]
-  })
   
-  # Find the sheet ending with "_map"
-  map_sheet <- reactive({
-    matches <- grep("_map$", sheet_names(), value = TRUE)
-    
-    validate(
-      need(length(matches) == 1,
-           paste0("Expected exactly one sheet ending with '_map', but found ", length(matches), "."))
-    )
-    
-    matches[1]
-  })
-  
-  # Read the value sheet
-  values_data <- reactive({
-    read_excel(selected_file(), sheet = value_sheet())
-  })
-  
-  # Read the map sheet
-  map_data <- reactive({
-    read_excel(selected_file(), sheet = map_sheet())
-  })
-  
-  # Create the final long data
+  # loop trough all files and process them
   long_data <- reactive({
+    req(xlsx_files())
     
-    # Basic safety check to make sure both sheets have same shape
-    validate(
-      need(ncol(values_data()) == ncol(map_data()),
-           "The value and map sheets do not have the same number of columns."),
-      need(nrow(values_data()) == nrow(map_data()),
-           "The value and map sheets do not have the same number of rows.")
-    )
+    failures <- character(0)
+    results <- lapply(xlsx_files(), function(f) {
+      tryCatch(
+        process_elisa_file(f),
+        error = function(e) {
+          failures <<- c(failures, paste0(basename(f), ": ", conditionMessage(e)))
+          NULL
+        }
+      )
+    })
     
-    create_elisa_long(
-      values_df = values_data(),
-      map_df = map_data(),
-      file_path = selected_file(),
-      assay_name = gsub(value_sheet(), pattern = "_value$", replacement = "")
-    )
+    if (length(failures) > 0) {
+      showNotification(paste("Skipped:", paste(failures, collapse = "; ")),
+                       type = "warning", duration = 10)
+    }
+    
+    results <- results[!vapply(results, is.null, logical(1))]
+    validate(need(length(results) > 0, "No files could be processed."))
+    dplyr::bind_rows(results)
   })
   
   #compute AUC for each sample
@@ -124,6 +99,7 @@ server <- function(input, output, session) {
       ) +
       geom_line(linewidth = 0.8) +
       geom_point(size = 2) +
+      facet_wrap(~ file_name, scales = "free_y") +
       labs(
         title = "ELISA values by dilution",
         x = "Dilution",
@@ -141,7 +117,8 @@ server <- function(input, output, session) {
   
   # Show selected path
   output$selected_path <- renderText({
-    selected_file()
+    req(selected_dir())
+    paste0(selected_dir(), "  (", length(xlsx_files()), " file(s) found)")
   })
   
   # Preview the final long data
