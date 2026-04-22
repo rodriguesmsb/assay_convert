@@ -108,6 +108,13 @@ compute_trapz_auc <- function(x, y) {
   x <- x[ord]
   y <- y[ord]
   
+  #convert y to log scale if not already
+  if (any(x <= 0)) {
+    x <- log(x + 1) # add 1 to avoid log(0)
+  } else {
+    x <- log(x)
+  }
+  
   # Trapezoidal rule
   auc <- sum(diff(x) * (head(y, -1) + tail(y, -1)) / 2)
   
