@@ -30,22 +30,8 @@ create_elisa_long <- function(values_df, map_df, file_path, assay_name) {
   names(values_df)[1] <- "plate_row"
   names(map_df)[1] <- "plate_row"
   
-  # Build dilution lookup from row A in the map sheet
-  dilution_lookup <- map_df %>%
-    filter(plate_row == "A") %>%
-    pivot_longer(
-      cols = -plate_row,
-      names_to = "plate_col",
-      values_to = "dilution"
-    ) %>%
-    mutate(
-      plate_col = as.character(plate_col)
-    ) %>%
-    select(plate_col, dilution)
-  
   # Convert value sheet to long format
   values_long <- values_df %>%
-    filter(plate_row != "A") %>%
     pivot_longer(
       cols = -plate_row,
       names_to = "plate_col",
@@ -59,7 +45,6 @@ create_elisa_long <- function(values_df, map_df, file_path, assay_name) {
   
   # Convert map sheet to long format
   sample_long <- map_df %>%
-    filter(plate_row != "A") %>%
     pivot_longer(
       cols = -plate_row,
       names_to = "plate_col",
@@ -74,12 +59,18 @@ create_elisa_long <- function(values_df, map_df, file_path, assay_name) {
   # Join everything together and add file name + assay name
   final_long <- sample_long %>%
     left_join(values_long, by = c("position", "plate_row", "plate_col")) %>%
-    left_join(dilution_lookup, by = "plate_col") %>%
     mutate(
       file_name = basename(file_path),
       assay = assay_name
     ) %>%
-    select(sample, position, value, dilution, assay, file_name)
+    select(sample, position, value, assay, file_name)
+  
+  
+  #fix dilution to use values after the last underscore in the sample name
+  final_long <- final_long %>%
+    mutate(
+      dilution = str_extract(sample, "(?<=_)[0-9]+$")
+    )
   
   # Remove only the final dilution suffix from the sample name
   # Example:
