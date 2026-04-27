@@ -139,11 +139,11 @@ compute_trapz_auc <- function(x, y) {
   x <- x[ord]
   y <- y[ord]
   
-  #convert y to log scale if not already
+  #convert y to log10 scale if not already
   if (any(x <= 0)) {
-    x <- log(x + 1) # add 1 to avoid log(0)
+    x <- log10(x + 1) # add 1 to avoid log(0)
   } else {
-    x <- log(x)
+    x <- log10(x)
   }
   
   # Trapezoidal rule
