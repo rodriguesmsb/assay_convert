@@ -84,7 +84,7 @@ server <- function(input, output, session) {
       arrange(sample, dilution_num) %>%
       ggplot(
         aes(
-          x = log(dilution_num), # plot dilution on log scale
+          x = log10(dilution_num), # plot dilution on log10 scale
           y = value,
           color = sample,
           group = sample,
