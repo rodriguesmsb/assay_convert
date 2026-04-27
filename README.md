@@ -20,10 +20,10 @@ Point the app at a folder of `.xlsx` files and it will:
 
 Each Excel workbook should contain two sheets:
 
-- `<assay>_value` — plate-shaped OD readings (row A = dilutions, rows B–H = samples)
+- `<assay>_value` — plate-shaped OD readings
 - `<assay>_map`   — plate-shaped sample IDs matching the value sheet layout
 
-Sample IDs may carry a trailing dilution suffix (e.g. `E80-1558-E1-CV-W00_100`),
+
 which is stripped automatically.
 
 ## Tech stack
