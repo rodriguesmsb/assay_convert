@@ -12,32 +12,39 @@ server <- function(input, output, session) {
   
   # Define which folders the app is allowed to browse
   roots <- c(home = "//win.ad.jhu.edu/Users$/HOME/")
-  
-  # allow shiny to browse for Excel files
-  shinyDirChoose(
+
+  # Allow Shiny to browse for Excel files directly
+  shinyFileChoose(
     input,
-    id = "xlsx_dir",
+    id = "xlsx_files",
     roots = roots,
-    allowDirCreate = FALSE
-  )
-  
-  # return all files inside the folder
-  selected_dir <- reactive({
-    req(input$xlsx_dir)
-    dir_path <- parseDirPath(roots, input$xlsx_dir)
-    req(length(dir_path) > 0, nzchar(dir_path))
-    dir_path
-  })
-  
-  # List all .xlsx files in the selected folder (skip Excel lock files)
-  xlsx_files <- reactive({
-    req(selected_dir())
-    files <- list.files(selected_dir(), pattern = "\\.xlsx$",
-                        full.names = TRUE, ignore.case = TRUE)
+    filetypes = c("xlsx")
+    )
+
+  # Return only the files explicitly selected by the user
+  selected_files <- reactive({
+
+    # Wait until at least one file is selected
+    req(input$xlsx_files)
+
+    # Convert shinyFiles output into a regular data frame
+    file_info <- parseFilePaths(roots, input$xlsx_files)
+
+    # Make sure at least one file was selected
+    validate(
+      need(nrow(file_info) > 0, "Please select at least one .xlsx file.")
+      )
+    
+    # Keep only real .xlsx files and skip Excel lock files
+    files <- file_info$datapath
+    files <- files[grepl("\\.xlsx$", files, ignore.case = TRUE)]
     files <- files[!grepl("^~\\$", basename(files))]
-    validate(need(length(files) > 0, "No .xlsx files found in the folder."))
+    validate(
+      need(length(files) > 0, "No valid .xlsx files were selected.")
+      )
     files
-  })
+    })
+
   
   
   # loop trough all files and process them
