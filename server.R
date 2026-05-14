@@ -45,32 +45,32 @@ server <- function(input, output, session) {
     files
     })
 
-  
-  
-  # loop trough all files and process them
   long_data <- reactive({
-    req(xlsx_files())
-    
+    req(selected_files())
+
     failures <- character(0)
-    results <- lapply(xlsx_files(), function(f) {
+    results <- lapply(selected_files(), function(f) {
       tryCatch(
         process_elisa_file(f),
         error = function(e) {
           failures <<- c(failures, paste0(basename(f), ": ", conditionMessage(e)))
           NULL
-        }
-      )
-    })
+          }
+        )
+      })
     
     if (length(failures) > 0) {
-      showNotification(paste("Skipped:", paste(failures, collapse = "; ")),
-                       type = "warning", duration = 10)
-    }
-    
+      showNotification(
+        paste("Skipped:", paste(failures, collapse = "; ")),
+        type = "warning",
+        duration = 10
+        )
+      }
     results <- results[!vapply(results, is.null, logical(1))]
     validate(need(length(results) > 0, "No files could be processed."))
     dplyr::bind_rows(results)
-  })
+    })
+
   
   #compute AUC for each sample
   auc_data <- reactive({
