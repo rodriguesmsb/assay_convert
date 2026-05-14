@@ -124,10 +124,17 @@ server <- function(input, output, session) {
   
   # Show selected path
   output$selected_path <- renderText({
-    req(selected_dir())
-    paste0(selected_dir(), "  (", length(xlsx_files()), " file(s) found)")
-  })
+    req(selected_files())
+    paste(
+      c(
+        paste0(length(selected_files()), " file(s) selected:"),
+        basename(selected_files())
+        ),
+      collapse = "\n"
+      )
+    })
   
+
   # Preview the final long data
   output$preview_long <- renderTable({
     head(long_data(), 15)
