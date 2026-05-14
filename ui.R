@@ -17,14 +17,16 @@ ui <- page_sidebar(
   # Define the sidebar content
   sidebar = sidebar(
     
-    # Let the user browse for the Excel workbook
-    shinyDirButton(
-      id    = "xlsx_dir",
-      label = "Select folder",
-      title = "Choose a folder containing .xlsx files"
-    ),
+
+    # Let the user browse and select one or more Excel files
+    shinyFilesButton(
+      id = "xlsx_files",
+      label = "Select Excel files",
+      title = "Choose one or more .xlsx files",
+      multiple = TRUE
+      ),
     
-    # show with folder was seleced
+    # Show the selected files
     verbatimTextOutput("selected_path", placeholder = TRUE),
     
     
